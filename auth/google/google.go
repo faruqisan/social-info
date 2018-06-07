@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"google.golang.org/api/plus/v1"
+
 	"github.com/faruqisan/social-info/database/postgresql"
 
 	"github.com/faruqisan/social-info/auth"
@@ -51,7 +53,13 @@ func NewGoogleAPI() auth.Auth {
 		log.Panicln("Unable to read client secret file:", err)
 	}
 
-	config, err = google.ConfigFromJSON(b, youtube.YoutubeReadonlyScope)
+	scopes := []string{
+		youtube.YoutubeReadonlyScope,
+		youtube.YoutubeUploadScope,
+		plus.UserinfoEmailScope,
+	}
+
+	config, err = google.ConfigFromJSON(b, scopes...)
 	if err != nil {
 		log.Panicln("Unable to parse client secret file to config: ", err)
 	}
@@ -76,6 +84,13 @@ func (g *API) GetAccessToken(authCode string) string {
 
 		g.Token = dbToken
 
+		now := time.Now()
+
+		if dbToken.Expiry.Before(now) {
+			g.refreshToken()
+			log.Println("token refreshed")
+		}
+
 		return dbToken.AccessToken
 	}
 
@@ -85,13 +100,6 @@ func (g *API) GetAccessToken(authCode string) string {
 	}
 
 	log.Println("token inside get access token :", token)
-
-	// now := time.Now()
-
-	// if token.Expiry.Before(now) {
-	// 	g.refreshToken()
-	// 	log.Println("token refreshed")
-	// }
 
 	g.Token = token
 
@@ -134,6 +142,19 @@ func (g *API) refreshToken() {
 }
 
 func (g *API) saveToken(token *oauth2.Token) (err error) {
+
+	gc := g.GetAPIClient()
+
+	plusService, err := plus.New(gc)
+	if err != nil {
+		log.Fatalf("Unable to init G+ Client %v", err)
+	}
+
+	person, err := plusService.People.Get("me").Do()
+	if err != nil {
+		log.Fatalf("Unable to init G+ Client %v", err)
+	}
+
 	// Store access token to db
 
 	db, err := db.GetDatabase()
@@ -146,7 +167,15 @@ func (g *API) saveToken(token *oauth2.Token) (err error) {
 		log.Panicln(err)
 	}
 
-	_, err = stmt.Exec(token.AccessToken, token.RefreshToken, token.TokenType, token.Expiry)
+	var email *plus.PersonEmails
+
+	for _, e := range person.Emails {
+		if e.Type == "account" {
+			email = e
+		}
+	}
+
+	_, err = stmt.Exec(token.AccessToken, token.RefreshToken, token.TokenType, token.Expiry, email.Value)
 	if err != nil {
 		log.Panicln(err)
 	}

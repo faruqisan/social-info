@@ -26,6 +26,28 @@ func RegisterAPI() {
 
 	}))
 
+	http.HandleFunc("/youtube/upload", middlewares.CheckGoogleAccessToken(g, func(w http.ResponseWriter, r *http.Request) {
+
+		gC := g.GetAPIClient()
+		youtubeService := youtube.NewYoutubeClient(gC)
+
+		var response struct {
+			Success bool
+		}
+
+		err := youtubeService.UploadVideo()
+		if err != nil {
+			response.Success = false
+		} else {
+			response.Success = true
+		}
+
+		p, _ := json.Marshal(response)
+
+		w.Write(p)
+
+	}))
+
 	http.HandleFunc("/callback/google", func(w http.ResponseWriter, r *http.Request) {
 
 		code := r.FormValue("code")
