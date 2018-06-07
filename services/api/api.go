@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/faruqisan/social-info/auth/google"
@@ -15,12 +14,6 @@ func RegisterAPI() {
 	g := google.NewGoogleAPI()
 
 	http.HandleFunc("/youtube", middlewares.CheckGoogleAccessToken(g, func(w http.ResponseWriter, r *http.Request) {
-
-		if !g.CheckToken() {
-			log.Println("Checking token")
-			http.Redirect(w, r, g.GetAuthorizeURL(), http.StatusFound)
-			return
-		}
 
 		gC := g.GetAPIClient()
 		youtubeService := youtube.NewYoutubeClient(gC)
