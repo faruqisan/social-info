@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"time"
 
 	"github.com/faruqisan/social-info/configs"
 
@@ -21,14 +19,4 @@ func main() {
 
 	api.RegisterAPI()
 
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-	go func() {
-		for t := range ticker.C {
-			log.Println(t)
-		}
-	}()
-
-	log.Printf("****Server Running on Port %s****", port)
-	log.Fatal(http.ListenAndServe(port, nil))
 }

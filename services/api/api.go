@@ -1,63 +1,35 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
+	"github.com/faruqisan/social-info/services/api/handlers"
 
-	"github.com/faruqisan/social-info/auth/google"
 	"github.com/faruqisan/social-info/services/api/middlewares"
-	"github.com/faruqisan/social-info/src/youtube"
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterAPI() {
 
-	g := google.NewGoogleAPI()
+	r := gin.Default()
 
-	http.HandleFunc("/youtube", middlewares.CheckGoogleAccessToken(g, func(w http.ResponseWriter, r *http.Request) {
+	ytHandler := handlers.NewYoutubeHandler()
 
-		gC := g.GetAPIClient()
-		youtubeService := youtube.NewYoutubeClient(gC)
+	youtubeAPI := r.Group("/youtube")
 
-		channelInfos := youtubeService.GetChannelInfos("snippet,contentDetails,statistics")
+	youtubeAPI.Use(middlewares.CheckGoogleAccessToken(ytHandler.Service.GoogleAPI))
+	{
+		youtubeAPI.GET("/", ytHandler.HandleGetYotubeChannelInfos)
+		youtubeAPI.GET("/user/:username", ytHandler.HandleGetYotubeUserChannelInfos)
+		youtubeAPI.GET("/upload", ytHandler.HandleUploadVideo)
+	}
 
-		p, _ := json.Marshal(channelInfos)
+	cbHandler := handlers.NewCallbackHandler()
 
-		w.Write(p)
+	callbacks := r.Group("/callback")
+	{
+		callbacks.GET("/google", cbHandler.HandleGoogleCallback)
+		callbacks.GET("/twitter", cbHandler.HandleTwitterCallback)
+	}
 
-	}))
+	r.Run(":3030")
 
-	http.HandleFunc("/youtube/upload", middlewares.CheckGoogleAccessToken(g, func(w http.ResponseWriter, r *http.Request) {
-
-		gC := g.GetAPIClient()
-		youtubeService := youtube.NewYoutubeClient(gC)
-
-		var response struct {
-			Success bool
-		}
-
-		err := youtubeService.UploadVideo()
-		if err != nil {
-			response.Success = false
-		} else {
-			response.Success = true
-		}
-
-		p, _ := json.Marshal(response)
-
-		w.Write(p)
-
-	}))
-
-	http.HandleFunc("/callback/google", func(w http.ResponseWriter, r *http.Request) {
-
-		code := r.FormValue("code")
-		errAuth := r.FormValue("error")
-		if errAuth != "" {
-			return
-		}
-		g.GetAccessToken(code)
-
-		http.Redirect(w, r, "/youtube", http.StatusFound)
-
-	})
 }

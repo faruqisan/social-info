@@ -3,27 +3,35 @@ package youtube
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
+
+	"github.com/faruqisan/social-info/auth"
+
+	"github.com/faruqisan/social-info/auth/google"
 
 	"google.golang.org/api/youtube/v3"
 )
 
 // Client x
 type Client struct {
-	service *youtube.Service
+	service   *youtube.Service
+	GoogleAPI auth.Auth
 }
 
 // NewYoutubeClient return instance of youtube client
-func NewYoutubeClient(googleClient *http.Client) Client {
+func NewYoutubeClient() Client {
+
+	googleAPI := google.NewGoogleAPI()
+
+	googleClient := googleAPI.GetAPIClient()
 
 	service, err := youtube.New(googleClient)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
-	return Client{service}
+	return Client{service, googleAPI}
 }
 
 func handleError(err error, message string) {
