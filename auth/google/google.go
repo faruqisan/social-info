@@ -43,6 +43,8 @@ type SavedToken struct {
 	RefreshToken string    `db:"refresh_token"`
 	TokenType    string    `db:"token_type"`
 	Expiry       time.Time `db:"expiry"`
+	Email        string    `db:"email"`
+	ID           int64     `db:"id"`
 }
 
 // NewGoogleAPI return instance of Client that implemented Auth interface
@@ -66,7 +68,14 @@ func NewGoogleAPI() auth.Auth {
 
 	db = postgresql.NewPostgresql()
 
-	return &API{}
+	tok, err := getTokenFromDatabase()
+	if err != nil {
+		log.Panicln("Unable to get token from db: ", err)
+	}
+
+	return &API{
+		tok,
+	}
 }
 
 // GetAccessToken return token from oauth
@@ -75,7 +84,7 @@ func (g *API) GetAccessToken(authCode string) string {
 
 	// check token from database
 
-	dbToken, err := g.getTokenFromDatabase()
+	dbToken, err := getTokenFromDatabase()
 	if err != nil {
 		log.Println("Error get token from database", err)
 	}
@@ -183,7 +192,7 @@ func (g *API) saveToken(token *oauth2.Token) (err error) {
 	return
 }
 
-func (g *API) getTokenFromDatabase() (*oauth2.Token, error) {
+func getTokenFromDatabase() (*oauth2.Token, error) {
 
 	var savedToken SavedToken
 
