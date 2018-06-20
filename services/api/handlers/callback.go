@@ -29,15 +29,3 @@ func (cb *CallbackHandler) HandleGoogleCallback(c *gin.Context) {
 	cb.GoogleAPI.GetAccessToken(code)
 
 }
-
-func (cb *CallbackHandler) HandleTwitterCallback(c *gin.Context) {
-
-	code := c.Query("code")
-	errAuth := c.Query("error")
-	if errAuth != "" {
-		return
-	}
-
-	cb.GoogleAPI.GetAccessToken(code)
-
-}

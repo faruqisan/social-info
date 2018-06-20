@@ -9,6 +9,8 @@ import (
 
 func RegisterAPI() {
 
+	gin.SetMode(gin.ReleaseMode)
+
 	r := gin.Default()
 
 	ytHandler := handlers.NewYoutubeHandler()
@@ -22,14 +24,22 @@ func RegisterAPI() {
 		youtubeAPI.GET("/upload", ytHandler.HandleUploadVideo)
 	}
 
+	twHandler := handlers.NewTwitterHandler()
+
+	twitterAPI := r.Group("/twitter")
+	{
+		twitterAPI.GET("/authorize", twHandler.Authorize)
+		twitterAPI.POST("/tweet", twHandler.SendTweet)
+	}
+
 	cbHandler := handlers.NewCallbackHandler()
 
 	callbacks := r.Group("/callback")
 	{
 		callbacks.GET("/google", cbHandler.HandleGoogleCallback)
-		callbacks.GET("/twitter", cbHandler.HandleTwitterCallback)
+		callbacks.GET("/twitter", twHandler.HandleCallback)
 	}
 
-	r.Run(":3030")
+	r.Run(":8080")
 
 }
