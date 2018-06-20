@@ -5,14 +5,11 @@ import (
 	"net/http"
 
 	"github.com/faruqisan/social-info/auth"
+	"github.com/faruqisan/social-info/configs"
 
 	"github.com/dghubble/oauth1"
 	"github.com/dghubble/oauth1/twitter"
 )
-
-const callbackURL = "http://localhost:8080/callback/twitter"
-const consumerKey = "Sg3FuGDOmkE7bGy5BKkFL5bPs"
-const consumerSecret = "wOXpBo9iEAtI29z9PRk32TmWV9s86QUIiCM4b8ujg7h95kPhCw"
 
 type Client struct {
 	config *oauth1.Config
@@ -21,10 +18,13 @@ type Client struct {
 
 func NewTwitter() auth.Auth {
 
+	cfg := configs.GetConfig()
+	twCfg := cfg.TwConfig
+
 	config := &oauth1.Config{
-		ConsumerKey:    consumerKey,
-		ConsumerSecret: consumerSecret,
-		CallbackURL:    callbackURL,
+		ConsumerKey:    twCfg.ConsumerKey,
+		ConsumerSecret: twCfg.ConsumerSecret,
+		CallbackURL:    twCfg.RedirectURL,
 		Endpoint:       twitter.AuthorizeEndpoint,
 	}
 
