@@ -79,7 +79,7 @@ func NewGoogleAPI() auth.Auth {
 }
 
 // GetAccessToken return token from oauth
-func (g *API) GetAccessToken(authCode string) string {
+func (g *API) GetAccessToken(authCode interface{}) string {
 	ctx := context.Background()
 
 	// check token from database
@@ -103,7 +103,12 @@ func (g *API) GetAccessToken(authCode string) string {
 		return dbToken.AccessToken
 	}
 
-	token, err := config.Exchange(ctx, authCode)
+	aCode, ok := authCode.(string)
+	if !ok {
+		log.Println("Request isn't string : ", ok)
+	}
+
+	token, err := config.Exchange(ctx, aCode)
 	if err != nil {
 		log.Println("Unable to exchange tokens:", err)
 	}
